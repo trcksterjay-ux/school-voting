@@ -98,14 +98,14 @@ app.post('/vote', async (req, res) => {
   }
 });
 
-// Results: grouped by position/candidate for frontend
+// Results: grouped and sorted by position, highest votes first
 app.get('/results', async (req, res) => {
   try {
     const result = await db.query(`
       SELECT position, candidate, COUNT(*) AS count
       FROM votes
       GROUP BY position, candidate
-      ORDER BY position, candidate
+      ORDER BY position, COUNT(*) DESC, candidate ASC
     `);
     res.json(result.rows);
   } catch (err) {
