@@ -5,6 +5,24 @@
   <title>School Voting System</title>
   <link rel="stylesheet" href="style.css"/>
 </head>
+
+<script>
+  // Enforce max 5 checkboxes for officers
+  document.addEventListener('DOMContentLoaded', function() {
+    const officerCheckboxes = document.querySelectorAll('input[name="officers"]');
+    officerCheckboxes.forEach(function(box) {
+      box.addEventListener('change', function() {
+        const checked = document.querySelectorAll('input[name="officers"]:checked');
+        if (checked.length > 5) {
+          this.checked = false;
+          alert('You can select up to 5 officers only.');
+        }
+      });
+    });
+  });
+</script>
+
+
 <body>
   <div class="container">
     <header>
@@ -21,20 +39,40 @@
       </form>
     </section>
     
-    <section class="card">
-      <h2>Vote Now</h2>
-      <form action="/vote" method="post" class="form">
-        <input type="text" name="school_id" placeholder="Your School ID" required>
-        <select name="candidate" required>
-          <option value="" disabled selected>--Select a Candidate--</option>
-	  <option value="Ken">Ken</option>
-          <option value="Nov">Nov</option>
-          <option value="Kev">Kev</option>
-          <option value="Anj">Anj</option>
-        </select>
-        <button type="submit">Vote</button>
-      </form>
-    </section>
+<section class="card">
+  <h2>Vote Now</h2>
+  <form action="/vote" method="post" class="form" id="voteForm">
+    <input type="text" name="school_id" placeholder="Your School ID" required>
+
+    <fieldset>
+      <legend class="vote-cat">President</legend>
+      <label><input type="radio" name="president" value="Alice" required> Alice</label><br>
+      <label><input type="radio" name="president" value="Bob"> Bob</label>
+    </fieldset>
+
+    <fieldset>
+      <legend class="vote-cat">Vice President</legend>
+      <label><input type="radio" name="vp" value="Charlie" required> Charlie</label><br>
+      <label><input type="radio" name="vp" value="Dana"> Dana</label>
+    </fieldset>
+
+    <fieldset>
+      <legend class="vote-cat">Officers <span style="font-size: 0.9em; color: #888;">(select up to 5)</span></legend>
+      <label><input type="checkbox" name="officers" value="Eve"> Eve</label><br>
+      <label><input type="checkbox" name="officers" value="Frank"> Frank</label><br>
+      <label><input type="checkbox" name="officers" value="Grace"> Grace</label><br>
+      <label><input type="checkbox" name="officers" value="Heidi"> Heidi</label><br>
+      <label><input type="checkbox" name="officers" value="Ivan"> Ivan</label><br>
+      <label><input type="checkbox" name="officers" value="Judy"> Judy</label><br>
+      <label><input type="checkbox" name="officers" value="Kim"> Kim</label><br>
+      <label><input type="checkbox" name="officers" value="Leo"> Leo</label><br>
+      <label><input type="checkbox" name="officers" value="Mallory"> Mallory</label><br>
+      <label><input type="checkbox" name="officers" value="Nina"> Nina</label>
+    </fieldset>
+
+    <button type="submit">Vote</button>
+  </form>
+</section>
 
     <section class="card results-section">
       <h2>Live Results</h2>

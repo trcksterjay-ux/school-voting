@@ -5,14 +5,11 @@ const path = require('path');
 
 const app = express();
 
-// Replace this with your Neon connection string (keep it secret in prod with env vars!)
+// Neon/PostgreSQL connection string -- use env var in production!
 const connectionString = 'postgresql://neondb_owner:npg_F9cJaSgT3xYo@ep-winter-leaf-aq1bpt7c.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require';
+const db = new Pool({ connectionString });
 
-const db = new Pool({
-  connectionString
-});
-
-// Table Creation Queries
+// Table creation: students and votes with position/candidate
 const createTables = async () => {
   await db.query(`
     CREATE TABLE IF NOT EXISTS students (
@@ -26,6 +23,7 @@ const createTables = async () => {
     CREATE TABLE IF NOT EXISTS votes (
       id SERIAL PRIMARY KEY,
       school_id VARCHAR(64) REFERENCES students(school_id),
+      position VARCHAR(30) NOT NULL,
       candidate VARCHAR(64) NOT NULL
     );
   `);
@@ -52,42 +50,66 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Vote
+// Voting
 app.post('/vote', async (req, res) => {
-  const { school_id, candidate } = req.body;
+  const { school_id, president, vp } = req.body;
+  let officers = req.body.officers;
+
+  // officers can be string or array, make sure it's always array for processing
+  if (officers && !Array.isArray(officers)) officers = [officers];
+
   try {
+    // 1. Verify student exists and hasn't voted
     const student = await db.query(
       'SELECT has_voted FROM students WHERE school_id = $1',
       [school_id]
     );
-    if (student.rows.length === 0) {
-      return res.send('School ID not registered.');
+    if (student.rows.length === 0) return res.send('School ID not registered.');
+    if (student.rows[0].has_voted) return res.send('You have already voted.');
+
+    // 2. Validate officer choices
+    if (officers && officers.length > 5) {
+      return res.send('Select up to 5 officers only.');
     }
-    if (student.rows[0].has_voted) {
-      return res.send('You have already voted.');
+
+    // 3. Build ballot entries
+    const voteInserts = [];
+    if (president) voteInserts.push(['President', president]);
+    if (vp) voteInserts.push(['Vice President', vp]);
+    if (officers && officers.length)
+      officers.forEach(officer => voteInserts.push(['Officer', officer]));
+
+    // 4. Insert all votes
+    for (const [position, candidate] of voteInserts) {
+      await db.query(
+        'INSERT INTO votes (school_id, position, candidate) VALUES ($1, $2, $3)',
+        [school_id, position, candidate]
+      );
     }
-    // Record vote
-    await db.query(
-      'INSERT INTO votes (school_id, candidate) VALUES ($1, $2)',
-      [school_id, candidate]
-    );
-    // Mark as voted
+
+    // 5. Set student as voted
     await db.query(
       'UPDATE students SET has_voted = TRUE WHERE school_id = $1',
       [school_id]
     );
+
+    // 6. Redirect to success
     res.redirect('/?vote=success');
   } catch (err) {
+    console.error(err);
     res.status(500).send('Error voting.');
   }
 });
 
-// Live results
+// Live Results as JSON (return breakdown by position and candidate)
 app.get('/results', async (req, res) => {
   try {
-    const result = await db.query(
-      'SELECT candidate, COUNT(*) AS count FROM votes GROUP BY candidate'
-    );
+    const result = await db.query(`
+      SELECT position, candidate, COUNT(*) AS count
+      FROM votes
+      GROUP BY position, candidate
+      ORDER BY position, candidate
+    `);
     res.json(result.rows);
   } catch (err) {
     res.json([]);
