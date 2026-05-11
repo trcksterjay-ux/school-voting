@@ -42,7 +42,7 @@
     </section>
   </div>
   <footer>
-    &copy; 2026 School Voting System &middot; Created by YourName
+    &copy; 2026 School Voting System &middot; Created by Jkramz
   </footer>
   <script>
     function loadResults() {
@@ -63,6 +63,23 @@
     }
     setInterval(loadResults, 1500);
     loadResults();
+
+ setInterval(loadResults, 1500);
+  loadResults();
+
+  // Show a pop-up if "vote=success" found in URL
+  window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('vote') === 'success') {
+      alert("Vote Successful!");
+      // Optionally, remove the query part from the URL without reloading:
+      if (window.history.replaceState) {
+        const url = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, url);
+      }
+    }
+  };
+
   </script>
 </body>
 </html>
