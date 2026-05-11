@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>School Voting System</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🏫 School Voting System</h1>
+      <p class="subtitle">Cast your vote securely and see results live!</p>
+    </header>
+    
+    <section class="card">
+      <h2>Register</h2>
+      <form action="/register" method="post" class="form">
+        <input type="text" name="school_id" placeholder="School ID" required>
+        <input type="text" name="name" placeholder="Your Name" required>
+        <button type="submit">Register</button>
+      </form>
+    </section>
+    
+    <section class="card">
+      <h2>Vote Now</h2>
+      <form action="/vote" method="post" class="form">
+        <input type="text" name="school_id" placeholder="Your School ID" required>
+        <select name="candidate" required>
+          <option value="" disabled selected>--Select a Candidate--</option>
+          <option value="Alice">Alice</option>
+          <option value="Bob">Bob</option>
+          <option value="Charlie">Charlie</option>
+        </select>
+        <button type="submit">Vote</button>
+      </form>
+    </section>
+
+    <section class="card results-section">
+      <h2>Live Results</h2>
+      <div id="results"></div>
+    </section>
+  </div>
+  <footer>
+    &copy; 2026 School Voting System &middot; Created by YourName
+  </footer>
+  <script>
+    function loadResults() {
+      fetch('/results').then(res => res.json()).then(data => {
+        let html = "";
+        data.forEach((c, idx) => {
+          html += `<div class="result-bar">
+            <span class="candidate">${c.candidate}</span>
+            <div class="bar-outer">
+              <div class="bar-inner" style="width:${Math.min(100, c.count * 20)}%;"></div>
+            </div>
+            <span class="votes">${c.count} vote${c.count != 1 ? 's' : ''}</span>
+          </div>`;
+        });
+        if (!html) html = "<p>No votes yet.</p>";
+        document.getElementById('results').innerHTML = html;
+      });
+    }
+    setInterval(loadResults, 1500);
+    loadResults();
+  </script>
+</body>
+</html>
