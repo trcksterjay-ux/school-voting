@@ -5,11 +5,11 @@ const path = require('path');
 
 const app = express();
 
-// Neon/PostgreSQL connection string -- use env var in production!
+// Your Neon/Postgres connection string
 const connectionString = 'postgresql://neondb_owner:npg_F9cJaSgT3xYo@ep-winter-leaf-aq1bpt7c.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require';
 const db = new Pool({ connectionString });
 
-// Table creation: students and votes with position/candidate
+// Create necessary tables
 const createTables = async () => {
   await db.query(`
     CREATE TABLE IF NOT EXISTS students (
@@ -42,7 +42,7 @@ app.post('/register', async (req, res) => {
     );
     res.redirect('/');
   } catch (err) {
-    if (err.code === '23505') { // unique_violation
+    if (err.code === '23505') { // already registered
       res.send('School ID already registered.');
     } else {
       res.status(500).send('Error registering.');
@@ -50,36 +50,33 @@ app.post('/register', async (req, res) => {
   }
 });
 
-// Voting
+// Vote
 app.post('/vote', async (req, res) => {
   const { school_id, president, vp } = req.body;
   let officers = req.body.officers;
 
-  // officers can be string or array, make sure it's always array for processing
+  // Ensure officers is always an array if submitted
   if (officers && !Array.isArray(officers)) officers = [officers];
 
   try {
-    // 1. Verify student exists and hasn't voted
-    const student = await db.query(
-      'SELECT has_voted FROM students WHERE school_id = $1',
-      [school_id]
-    );
+    // Check student + already voted
+    const student = await db.query('SELECT has_voted FROM students WHERE school_id = $1',[school_id]);
     if (student.rows.length === 0) return res.send('School ID not registered.');
     if (student.rows[0].has_voted) return res.send('You have already voted.');
 
-    // 2. Validate officer choices
+    // Max officer choice validation (shouldn't trigger due to frontend JS, but double check)
     if (officers && officers.length > 5) {
       return res.send('Select up to 5 officers only.');
     }
 
-    // 3. Build ballot entries
+    // Build all votes
     const voteInserts = [];
     if (president) voteInserts.push(['President', president]);
     if (vp) voteInserts.push(['Vice President', vp]);
     if (officers && officers.length)
       officers.forEach(officer => voteInserts.push(['Officer', officer]));
 
-    // 4. Insert all votes
+    // Save votes
     for (const [position, candidate] of voteInserts) {
       await db.query(
         'INSERT INTO votes (school_id, position, candidate) VALUES ($1, $2, $3)',
@@ -87,13 +84,13 @@ app.post('/vote', async (req, res) => {
       );
     }
 
-    // 5. Set student as voted
+    // Mark as voted
     await db.query(
       'UPDATE students SET has_voted = TRUE WHERE school_id = $1',
       [school_id]
     );
 
-    // 6. Redirect to success
+    // Success popup
     res.redirect('/?vote=success');
   } catch (err) {
     console.error(err);
@@ -101,7 +98,7 @@ app.post('/vote', async (req, res) => {
   }
 });
 
-// Live Results as JSON (return breakdown by position and candidate)
+// Results: grouped by position/candidate for frontend
 app.get('/results', async (req, res) => {
   try {
     const result = await db.query(`
@@ -128,5 +125,4 @@ const start = async () => {
     process.exit(1);
   }
 };
-
 start();
