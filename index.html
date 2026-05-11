@@ -1,0 +1,19 @@
+<script>
+  // Existing loadResults function here...
+
+  setInterval(loadResults, 1500);
+  loadResults();
+
+  // Show a pop-up if "vote=success" found in URL
+  window.onload = function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('vote') === 'success') {
+      alert("Vote Successful!");
+      // Optionally, remove the query part from the URL without reloading:
+      if (window.history.replaceState) {
+        const url = window.location.origin + window.location.pathname;
+        window.history.replaceState({}, document.title, url);
+      }
+    }
+  };
+</script>

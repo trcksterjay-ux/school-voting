@@ -76,7 +76,7 @@ app.post('/vote', async (req, res) => {
       'UPDATE students SET has_voted = TRUE WHERE school_id = $1',
       [school_id]
     );
-    res.redirect('/');
+    res.redirect('/?vote=success');
   } catch (err) {
     res.status(500).send('Error voting.');
   }
