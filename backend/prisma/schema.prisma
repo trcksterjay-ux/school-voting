@@ -1,0 +1,64 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+}
+
+model Class {
+  id        Int      @id @default(autoincrement())
+  className String
+  grade     String
+  section   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  students  ClassStudent[]
+
+  @@unique([className, grade, section])
+}
+
+model ClassStudent {
+  id        Int      @id @default(autoincrement())
+  classId   Int
+  studentId Int
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([classId, studentId])
+}
+
+model Student {
+  id         Int      @id @default(autoincrement())
+  lastName   String
+  firstName  String
+  middleName String?
+  address    String?
+  age        Int?
+  birthday   DateTime?
+  phone      String?
+  createdAt  DateTime @default(now())
+  attendances Attendance[]
+  classes    ClassStudent[]
+}
+
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  date      DateTime @db.Date
+  present   Boolean  @default(false)
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId Int
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, date])
+}
